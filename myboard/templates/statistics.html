@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}통계 분석{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <h2 class="fw-bold mb-4">📈 FMS 데이터 분석 센터</h2>
+
+    <div class="row mb-4">
+        <div class="col-md-5">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">품종별 무게 요약</h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-striped mb-0 text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th>품종</th>
+                                <th>수량</th>
+                                <th>평균</th>
+                                <th>최소</th>
+                                <th>최대</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in table_data %}
+                            <tr>
+                                <td class="fw-bold">{{ row['breed_name'] }}</td>
+                                <td>{{ row['count']|int }}</td>
+                                <td>{{ row['mean'] }}g</td>
+                                <td>{{ row['min'] }}g</td>
+                                <td>{{ row['max'] }}g</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">품종별 무게 분포</h5>
+                </div>
+                <div class="card-body text-center">
+                    <img src="data:image/png;base64,{{ weight_graph }}" class="img-fluid rounded" alt="무게 그래프">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">📊 일별 평균 성장 곡선 (Growth Curve)</h5>
+                </div>
+                <div class="card-body text-center">
+                    <img src="data:image/png;base64,{{ growth_graph }}" class="img-fluid rounded" style="max-height: 400px;" alt="성장 그래프">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">🌡️ 체온 데이터 정규분포 (Health Condition)</h5>
+                </div>
+                <div class="card-body text-center">
+                    <img src="data:image/png;base64,{{ temp_graph }}" class="img-fluid rounded" style="max-height: 400px;" alt="체온 정규분포 그래프">
+                    <p class="text-muted mt-2">
+                        * 파란색 막대/선: 실제 데이터 분포 | 빨간색 선: 이론적 정규분포
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends 'base.html' %} 
+
+{% block title %}FMS 결과 리포트{% endblock %} 
+
+{% block content %}
+<div class="container mt-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold text-dark">📊 FMS 통합 품질 리포트</h2>
+      <p class="text-muted">육계 품질 점검 및 적합 여부 상세 내역입니다.</p>
+    </div>
+    <span class="badge bg-primary rounded-pill p-2">Total: {{ results|length }} 건</span>
+  </div>
+
+  <div class="card shadow-sm mb-5 bg-body rounded">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-striped align-middle mb-0" style="font-size: 0.95rem;">
+          <thead class="table-dark text-center">
+            <tr>
+              <th scope="col" class="py-3">순위</th>
+              <th scope="col" class="py-3">육계번호</th>
+              <th scope="col" class="py-3">품종</th>
+              <th scope="col" class="py-3">종란무게</th>
+              <th scope="col" class="py-3">체온</th>
+              <th scope="col" class="py-3">호흡수</th>
+              <th scope="col" class="py-3">호수</th>
+              <th scope="col" class="py-3">판정</th>
+              <th scope="col" class="py-3">주문번호</th>
+              <th scope="col" class="py-3">고객사</th>
+              <th scope="col" class="py-3">도착지</th>
+              <th scope="col" class="py-3">점검일자</th>
+            </tr>
+          </thead>
+          
+          <tbody>
+            {% if results %}
+              {% for row in results %}
+              <tr class="text-center">
+                <td class="fw-bold text-secondary">{{ row['무게순위'] if row['무게순위'] else '-' }}</td>
+                
+                <td>{{ row['육계번호'] }}</td>
+                
+                <td><span class="fw-semibold text-primary">{{ row['품종'] }}</span></td>
+                
+                <td>{{ row['종란무게'] }}</td>
+                
+                <td>{{ row['체온'] }}</td>
+                
+                <td>{{ row['호흡수'] }}</td>
+                
+                <td>{{ row['호수'] }}</td>
+
+                <td>
+                  {% if 'Pass' in row['부적합여부'] %}
+                    <span class="badge bg-success bg-opacity-75">적합 (Pass)</span>
+                  {% elif 'Fail' in row['부적합여부'] %}
+                    <span class="badge bg-danger">부적합 (Fail)</span>
+                  {% else %}
+                    <span class="badge bg-secondary">-</span>
+                  {% endif %}
+                </td>
+
+                <td class="text-muted">{{ row['주문번호'] if row['주문번호'] else '-' }}</td>
+                
+                <td>{{ row['고객사'] if row['고객사'] else '-' }}</td>
+                
+                <td>{{ row['도착지'] if row['도착지'] else '-' }}</td>
+                
+                <td class="small">{{ row['점검일자'] }}</td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="12" class="text-center py-5 text-muted">
+                  표시할 데이터가 없습니다.
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
