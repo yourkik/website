@@ -276,111 +276,111 @@ def create_plot(df):
 
 # app.py
 
-@app.route('/statistics')
-def statistics():
-    conn = get_db_connection()
+# @app.route('/statistics')
+# def statistics():
+#     conn = get_db_connection()
     
-    # --- [데이터 조회] ---
-    # 1. 품종별 무게
-    query_weight = """
-    SELECT C.code_desc AS breed_name, B.raw_weight
-    FROM fms.chick_info A
-    JOIN fms.prod_result B ON A.chick_no = B.chick_no
-    JOIN fms.master_code C ON A.breeds = C.code
-    """
-    df_weight = pd.read_sql(query_weight, conn)
+#     # --- [데이터 조회] ---
+#     # 1. 품종별 무게
+#     query_weight = """
+#     SELECT C.code_desc AS breed_name, B.raw_weight
+#     FROM fms.chick_info A
+#     JOIN fms.prod_result B ON A.chick_no = B.chick_no
+#     JOIN fms.master_code C ON A.breeds = C.code
+#     """
+#     df_weight = pd.read_sql(query_weight, conn)
 
-    # 2. 체온
-    query_temp = "SELECT body_temp FROM fms.health_cond"
-    df_temp = pd.read_sql(query_temp, conn)
+#     # 2. 체온
+#     query_temp = "SELECT body_temp FROM fms.health_cond"
+#     df_temp = pd.read_sql(query_temp, conn)
 
-    # 3. 성장 데이터
-    query_growth = """
-    SELECT C.code_desc as breed_name, H.check_date, H.weight
-    FROM fms.health_cond H
-    JOIN fms.chick_info I ON H.chick_no = I.chick_no
-    JOIN fms.master_code C ON I.breeds = C.code
-    ORDER BY H.check_date
-    """
-    df_growth = pd.read_sql(query_growth, conn)
+#     # 3. 성장 데이터
+#     query_growth = """
+#     SELECT C.code_desc as breed_name, H.check_date, H.weight
+#     FROM fms.health_cond H
+#     JOIN fms.chick_info I ON H.chick_no = I.chick_no
+#     JOIN fms.master_code C ON I.breeds = C.code
+#     ORDER BY H.check_date
+#     """
+#     df_growth = pd.read_sql(query_growth, conn)
     
-    conn.close()
+#     conn.close()
 
-    # --- [데이터 전처리] ---
-    def clean_numeric(val):
-        if isinstance(val, str):
-            return float(re.sub(r'[^\d\.]', '', val))
-        return float(val)
+#     # --- [데이터 전처리] ---
+#     def clean_numeric(val):
+#         if isinstance(val, str):
+#             return float(re.sub(r'[^\d\.]', '', val))
+#         return float(val)
     
-    df_weight['raw_weight_num'] = df_weight['raw_weight'].apply(clean_numeric)
+#     df_weight['raw_weight_num'] = df_weight['raw_weight'].apply(clean_numeric)
     
-    df_temp['body_temp_num'] = df_temp['body_temp'].apply(clean_numeric)
-    df_temp = df_temp.dropna(subset=['body_temp_num'])
+#     df_temp['body_temp_num'] = df_temp['body_temp'].apply(clean_numeric)
+#     df_temp = df_temp.dropna(subset=['body_temp_num'])
     
-    df_growth['weight'] = df_growth['weight'].apply(clean_numeric)
-    df_growth['check_date'] = pd.to_datetime(df_growth['check_date'])
+#     df_growth['weight'] = df_growth['weight'].apply(clean_numeric)
+#     df_growth['check_date'] = pd.to_datetime(df_growth['check_date'])
 
-    # --- [통계표 생성] ---
-    stats_df = df_weight.groupby('breed_name')['raw_weight_num'].agg(['count', 'mean', 'min', 'max']).round(2)
-    stats_df = stats_df.reset_index()
-    stats_data = stats_df.to_dict('records')
+#     # --- [통계표 생성] ---
+#     stats_df = df_weight.groupby('breed_name')['raw_weight_num'].agg(['count', 'mean', 'min', 'max']).round(2)
+#     stats_df = stats_df.reset_index()
+#     stats_data = stats_df.to_dict('records')
 
-    # --- [그래프 생성] ---
-    plt.rcParams['font.family'] = 'Malgun Gothic'
-    plt.rcParams['axes.unicode_minus'] = False
+#     # --- [그래프 생성] ---
+#     plt.rcParams['font.family'] = 'Malgun Gothic'
+#     plt.rcParams['axes.unicode_minus'] = False
 
-    # (A) 품종별 무게 Box Plot
-    img1 = io.BytesIO()
-    plt.figure(figsize=(10, 6))
-    sns.boxplot(x='breed_name', y='raw_weight_num', hue='breed_name', data=df_weight, palette='Set3', legend=False)
-    plt.title('품종별 무게 분포')
-    plt.savefig(img1, format='png', bbox_inches='tight')
-    img1.seek(0)
-    weight_plot_url = base64.b64encode(img1.getvalue()).decode()
-    plt.close()
+#     # (A) 품종별 무게 Box Plot
+#     img1 = io.BytesIO()
+#     plt.figure(figsize=(10, 6))
+#     sns.boxplot(x='breed_name', y='raw_weight_num', hue='breed_name', data=df_weight, palette='Set3', legend=False)
+#     plt.title('품종별 무게 분포')
+#     plt.savefig(img1, format='png', bbox_inches='tight')
+#     img1.seek(0)
+#     weight_plot_url = base64.b64encode(img1.getvalue()).decode()
+#     plt.close()
 
-    # (B) 체온 정규분포
-    img2 = io.BytesIO()
-    fig, ax = plt.subplots(figsize=(10, 6))
-    data = df_temp['body_temp_num']
-    if len(data) > 0: # 데이터가 있을 때만 그림
-        n, bins, patches = ax.hist(data, bins=20, density=True, alpha=0.8)
-        cmap = plt.get_cmap('winter')
-        bin_centers = 0.5 * (bins[:-1] + bins[1:])
-        col = (bin_centers - min(bin_centers)) / (max(bin_centers) - min(bin_centers))
-        for c, p in zip(col, patches):
-            plt.setp(p, 'facecolor', cmap(c))
-        sns.kdeplot(data, color='pink', linewidth=2, linestyle='-', ax=ax, label='Actual Distribution')
-        mu, std = data.mean(), data.std()
-        x = np.linspace(data.min(), data.max(), 100)
-        p = norm.pdf(x, mu, std)
-        ax.plot(x, p, 'r--', linewidth=2.5, label=f'Normal Dist (μ={mu:.1f})')
-        ax.legend()
-    ax.set_title('체온 데이터 정규분포 (Winter Theme)')
-    plt.savefig(img2, format='png', bbox_inches='tight')
-    img2.seek(0)
-    temp_plot_url = base64.b64encode(img2.getvalue()).decode()
-    plt.close()
+#     # (B) 체온 정규분포
+#     img2 = io.BytesIO()
+#     fig, ax = plt.subplots(figsize=(10, 6))
+#     data = df_temp['body_temp_num']
+#     if len(data) > 0: # 데이터가 있을 때만 그림
+#         n, bins, patches = ax.hist(data, bins=20, density=True, alpha=0.8)
+#         cmap = plt.get_cmap('winter')
+#         bin_centers = 0.5 * (bins[:-1] + bins[1:])
+#         col = (bin_centers - min(bin_centers)) / (max(bin_centers) - min(bin_centers))
+#         for c, p in zip(col, patches):
+#             plt.setp(p, 'facecolor', cmap(c))
+#         sns.kdeplot(data, color='pink', linewidth=2, linestyle='-', ax=ax, label='Actual Distribution')
+#         mu, std = data.mean(), data.std()
+#         x = np.linspace(data.min(), data.max(), 100)
+#         p = norm.pdf(x, mu, std)
+#         ax.plot(x, p, 'r--', linewidth=2.5, label=f'Normal Dist (μ={mu:.1f})')
+#         ax.legend()
+#     ax.set_title('체온 데이터 정규분포 (Winter Theme)')
+#     plt.savefig(img2, format='png', bbox_inches='tight')
+#     img2.seek(0)
+#     temp_plot_url = base64.b64encode(img2.getvalue()).decode()
+#     plt.close()
 
-    # (C) 성장 곡선
-    img3 = io.BytesIO()
-    plt.figure(figsize=(10, 6))
-    if not df_growth.empty:
-        growth_summary = df_growth.groupby(['breed_name', 'check_date'])['weight'].mean().reset_index()
-        sns.lineplot(x='check_date', y='weight', hue='breed_name', data=growth_summary, marker='o', linewidth=2.5)
-    plt.title('일별 품종별 성장 곡선 (평균 증체량)')
-    plt.grid(True, linestyle='--', alpha=0.6)
-    plt.savefig(img3, format='png', bbox_inches='tight')
-    img3.seek(0)
-    growth_plot_url = base64.b64encode(img3.getvalue()).decode()
-    plt.close()
+#     # (C) 성장 곡선
+#     img3 = io.BytesIO()
+#     plt.figure(figsize=(10, 6))
+#     if not df_growth.empty:
+#         growth_summary = df_growth.groupby(['breed_name', 'check_date'])['weight'].mean().reset_index()
+#         sns.lineplot(x='check_date', y='weight', hue='breed_name', data=growth_summary, marker='o', linewidth=2.5)
+#     plt.title('일별 품종별 성장 곡선 (평균 증체량)')
+#     plt.grid(True, linestyle='--', alpha=0.6)
+#     plt.savefig(img3, format='png', bbox_inches='tight')
+#     img3.seek(0)
+#     growth_plot_url = base64.b64encode(img3.getvalue()).decode()
+#     plt.close()
 
-    return render_template('statistics.html', 
-                           table_data=stats_data, 
-                           weight_graph=weight_plot_url,
-                           temp_graph=temp_plot_url,
-                           growth_graph=growth_plot_url,
-                           )
+#     return render_template('statistics.html', 
+#                            table_data=stats_data, 
+#                            weight_graph=weight_plot_url,
+#                            temp_graph=temp_plot_url,
+#                            growth_graph=growth_plot_url,
+#                            )
 
 if __name__ == '__main__':
     app.run(debug=True)
