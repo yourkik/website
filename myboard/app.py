@@ -25,7 +25,8 @@ def get_db_connection():
             dbname=os.getenv('DB_NAME'),
             user=os.getenv('DB_USER'),
             password=os.getenv('DB_PASSWORD'),
-            sslmode='require' 
+            sslmode='require', # Azure를 위해 추가 필요
+            options='-C timezone=Asia/Seoul' # 한국 시간대로 설정
         )
         conn.autocommit = True
         print("✅ DB 연결 성공!")
